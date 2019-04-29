@@ -33,3 +33,4 @@ build/
 .externalNativeBuild
 WorkspaceSettings.xcsettings
 *.xcuserstate
+/UploadImage/target
