@@ -34,3 +34,4 @@ build/
 WorkspaceSettings.xcsettings
 *.xcuserstate
 /UploadImage/target
+/Example/uploads
