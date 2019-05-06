@@ -18,10 +18,6 @@ fun Application.module() {
     install(CallLogging)
     install(Routing) {
         get("/") {
-            call.respondText("My Example Blog2", ContentType.Text.Html)
-        }
-
-        get("jopa") {
             val path = System.getProperty("user.dir")
             call.respondText("$path", ContentType.Text.Html)
         }
@@ -29,13 +25,16 @@ fun Application.module() {
         post("/upload") { _ ->
             // retrieve all multipart data (suspending)
             val multipart = call.receiveMultipart()
+            val path = System.getProperty("user.dir")
+            var dir = File("$path/uploads/")
+            dir.mkdirs()
+
             multipart.forEachPart { part ->
                 // if part is a file (could be form item)
                 if (part is PartData.FileItem) {
                     // retrieve file name of upload
                     val name = part.originalFileName!!
-                    val path = System.getProperty("user.dir")
-                    val file = File("$path/uploads/$name")
+                    val file = File(dir, name)
 
                     // use InputStream from part to save file
                     part.streamProvider().use { its ->
@@ -53,6 +52,6 @@ fun Application.module() {
     }
 }
 
-fun main(args: Array<String>) {
+fun main() {
     embeddedServer(Netty, 8080, watchPaths = listOf("BlogAppKt"), module = Application::module).start()
 }
