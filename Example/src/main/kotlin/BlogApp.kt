@@ -7,6 +7,7 @@ import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
 import io.ktor.request.receiveMultipart
+import io.ktor.request.receiveText
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
@@ -14,11 +15,13 @@ import io.ktor.server.netty.*
 import io.ktor.sessions.*
 import java.io.File
 
-data class RedSession(val name: String, val value: Int)
+data class RedSession(val name: String)
 
 fun Application.module() {
     install(Sessions) {
-        cookie<RedSession>("SESSION", storage = SessionStorageMemory())
+        cookie<RedSession>("SESSION", storage = SessionStorageMemory()) {
+            cookie.path = "/"
+        }
     }
     install(DefaultHeaders)
     install(CallLogging)
@@ -28,23 +31,21 @@ fun Application.module() {
             call.respondText("$path", ContentType.Text.Html)
         }
 
-        get("/login"){
-            val session = call.sessions.get<RedSession>()
-            if (session == null) {
-                call.sessions.set(RedSession(name = "Abbb", value = 10))
-            }
-            val s = call.sessions.get<RedSession>()
+        post("/login"){
+            val name = call.receiveText()
+            call.sessions.set(RedSession(name = name))
             call.respond(HttpStatusCode.OK)
         }
 
         post("/upload") { _ ->
 
             val session = call.sessions.get<RedSession>()
+            val name = session!!.name
 
             // retrieve all multipart data (suspending)
             val multipart = call.receiveMultipart()
             val path = System.getProperty("user.dir")
-            var dir = File("$path/uploads/")
+            var dir = File("$path/uploads/$name")
             dir.mkdirs()
 
             multipart.forEachPart { part ->
@@ -66,6 +67,8 @@ fun Application.module() {
                 // make sure to dispose of the part after use to prevent leaks
                 part.dispose()
             }
+
+            call.respond(HttpStatusCode.OK)
         }
     }
 }
