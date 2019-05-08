@@ -11,9 +11,15 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.sessions.*
 import java.io.File
 
+data class RedSession(val name: String, val value: Int)
+
 fun Application.module() {
+    install(Sessions) {
+        cookie<RedSession>("SESSION", storage = SessionStorageMemory())
+    }
     install(DefaultHeaders)
     install(CallLogging)
     install(Routing) {
@@ -22,7 +28,19 @@ fun Application.module() {
             call.respondText("$path", ContentType.Text.Html)
         }
 
+        get("/login"){
+            val session = call.sessions.get<RedSession>()
+            if (session == null) {
+                call.sessions.set(RedSession(name = "Abbb", value = 10))
+            }
+            val s = call.sessions.get<RedSession>()
+            call.respond(HttpStatusCode.OK)
+        }
+
         post("/upload") { _ ->
+
+            val session = call.sessions.get<RedSession>()
+
             // retrieve all multipart data (suspending)
             val multipart = call.receiveMultipart()
             val path = System.getProperty("user.dir")
